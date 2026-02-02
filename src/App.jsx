@@ -1,5 +1,7 @@
-import { use, useEffect, useState } from 'react';
+import {  useEffect, useState } from 'react';
 import Search from './components/Search';
+import Spinner from './components/Spinner';
+import MovieCard from './components/MovieCard';
 
 
 //api-set of rules that allows one sw app to talk to another
@@ -27,30 +29,30 @@ const App = () => {
 
   const[isLoading,setIsLoading]=useState(false);
 
-  const fetchMovies = async () => {
+  const fetchMovies = async (query='') => {
     setIsLoading(true);
     seterrorMessage('');
     try {
-      const endpoint=`${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
+      //put together api base url, /discover/movie?sort_by=popularity.desc; 
+      const endpoint=query
+      ?`${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}`
+      :`${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
 
+
+      //fetch is often used to get data from api to display on the website
       const response=await fetch(endpoint,API_OPTION);
 
       if(!response.ok){
         throw new Error('Failed to fetch movies');
       }
-
-      const data=await response.json();
-
-      if(data.response=='False'){
-        seterrorMessage(data.Error || 'Failed to fetch movies');
-        setmoviesList([]);
-        return;
-      }
       
+      //if response is ok
+      const data=await response.json();
+ 
       setmoviesList(data.results || []);
 
     } catch (error) {
-      console.log(`Erro fetching movies : ${error}`)
+      console.log(`Error fetching movies : ${error}`)
       seterrorMessage('Error fetching movies. Please try again');
     }finally{
       setIsLoading(false);
@@ -58,8 +60,8 @@ const App = () => {
   }
 
   useEffect(() => {
-
-  }, []);
+    fetchMovies(searchTerm);
+  }, [searchTerm]);
 
   return (
     <main>
@@ -75,9 +77,26 @@ const App = () => {
         </header>
 
         <section className='all-movies'>
-          <h2>All Movies</h2>
+          <h2 className='mt-[40px]'>All Movies</h2>
 
-          {errorMessage && <p className='error-message'>{errorMessage}</p>}
+          {isLoading?(
+            <Spinner/>
+          ): errorMessage ?(
+            <p className='text-red-500'>{errorMessage}</p>
+          ): (
+            <ul>
+              {moviesList.map((movie)=>(
+                <MovieCard key={movie.id} movie={movie}/>
+                // <li key={movie.id} className='text-white'>{movie.title}</li>
+              ))}
+            </ul>
+          )
+        
+        
+          
+        }
+
+          {/* {errorMessage && <p className='error-message'>{errorMessage}</p>} */}
         </section>
 
 
